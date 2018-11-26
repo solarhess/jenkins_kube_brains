@@ -1,0 +1,53 @@
+#!/bin/bash
+set -eio pipefail
+
+# 
+# The common script file contains information on where
+# to store 
+#
+MASTER_NODE_HOSTNAME=stout-1.internal.sap.corp
+MASTER_NODE_IP=$(dig +short ${MASTER_NODE_HOSTNAME})
+WORKER_NODES_HOSTNAMES=( \
+    stout-31.internal.sap.corp \
+    stout-32.internal.sap.corp \
+    )
+
+POD_NETWORK_CIDR=192.168.0.0/17
+SERVICE_NETWORK_CIDR=192.168.128.0/17
+KUBE_DNS_SERVICE_IP=192.168.128.10
+
+# 
+# This corrects a bug in kubeadm which doesn't adjust the service IP address of 
+# kubedns when you use a non-default ip subnet for the services and pods. 
+# 
+function reconfigureKubeDnsAddress() {
+    sudo perl -pi -e 's/10.96.0.10/192.168.128.10/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
+    sudo systemctl daemon-reload
+    sudo systemctl restart kubelet docker
+}
+
+# 
+# A handy shell script function to print an error message and exit
+# 
+function die() {
+    echo $@
+    exit 1
+}
+
+#
+# Go get the config from the master node and set KUBECONFIG environment variables
+#
+function localKubeconfig {
+    if [ ! -f admin.conf ] ; then 
+        scp admin@$MASTER_NODE_HOSTNAME:admin.conf ./admin.conf
+    fi
+    export KUBECONFIG=`pwd`/admin.conf
+}
+
+#
+# Copy all the script files to the target machine
+#
+function uploadFiles() {
+    ssh "admin@$1" mkdir -p files
+    (cd files ; rsync -avz * "admin@$1:files/")
+}

@@ -1,0 +1,21 @@
+#!/bin/bash
+
+#
+# This script runs cleanup for leftover docker images that hang around 
+# on the worker docker engine even after the pods are long gone. 
+# Run this once an hour on all workers or else you will quickly fill
+# the disk up. 
+#
+dangling_containers="$(docker ps -a -f status=exited -f status=created -q)"
+dangling_images="$(docker images -f dangling=true -q)"
+dangling_volumes="$(docker volume ls -f dangling=true -q)"
+
+if [ "a${dangling_containers}" != "a" ] ; then 
+    docker rm ${dangling_containers}
+fi
+if [ "a${dangling_images}" != "a" ] ; then 
+    docker rmi ${dangling_images}
+fi
+if [ "a${dangling_volumes}" != "a" ] ; then 
+    docker volume rm ${dangling_volumes}
+fi

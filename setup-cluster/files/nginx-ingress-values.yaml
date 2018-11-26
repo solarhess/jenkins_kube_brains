@@ -1,0 +1,22 @@
+controller:
+#  image:
+#    repository: gcr.io/google_containers/nginx-ingress-controller
+#    tag: "0.9.0-beta.15"
+#    pullPolicy: IfNotPresent
+  image:
+    repository: quay.io/aledbf/nginx-ingress-controller
+    tag: "0.363"
+    pullPolicy: IfNotPresent
+  nodeSelector: 
+    nginxingress: "true"
+  hostNetwork: true
+
+  service:
+    type: ClusterIP
+
+## Enable RBAC as per https://github.com/kubernetes/ingress/tree/master/examples/rbac/nginx and https://github.com/kubernetes/ingress/issues/266
+rbac:
+  create: true
+  serviceAccountName: default
+
+  
