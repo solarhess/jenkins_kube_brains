@@ -16,7 +16,7 @@ source ./files/common
 function prepareNode() {
     local node_hostname=$1
 
-    ssh "admin@${node_hostname}" sudo bash -x <<EOF
+    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash -x <<EOF
 kubeadm reset
 rm -rf /var-alt/lib/rook
 unlink /var-alt/lib/kubelet/kubelet

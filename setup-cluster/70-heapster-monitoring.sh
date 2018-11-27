@@ -15,7 +15,7 @@ source ./files/common
 localKubeconfig
 uploadFiles $MASTER_NODE_HOSTNAME
 
-ssh admin@$MASTER_NODE_HOSTNAME bash <<EOF
+ssh $SSH_OPTS  admin@$MASTER_NODE_HOSTNAME bash <<EOF
     kubectl apply -f files/heapster/influxdb.yaml
     kubectl apply -f files/heapster/grafana.yaml
     kubectl apply -f files/heapster/heapster.yaml

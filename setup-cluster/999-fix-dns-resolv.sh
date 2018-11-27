@@ -16,7 +16,7 @@ source ./files/common
 function prepareNode() {
     local node_hostname=$1
 
-    ssh "admin@${node_hostname}" sudo bash <<EOF
+    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash <<EOF
 #
 # disable systemd-resolved and resolvconf
 # it plays havoc with kubedns

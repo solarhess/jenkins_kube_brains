@@ -24,7 +24,7 @@ uploadFiles $MASTER_NODE_HOSTNAME
 # also know as 10.27.165.228/24
 # or stout-2.prod.datahub.ecp.ydev.hybris.com
 
-ssh admin@$MASTER_NODE_HOSTNAME bash <<EOF
+ssh $SSH_OPTS  admin@$MASTER_NODE_HOSTNAME bash <<EOF
     kubectl apply -f files/kube-dashboard.yaml
     kubectl apply -f files/kube-dashboard-auth.yaml
     kubectl -n kube-system describe secret \$(kubectl -n kube-system get secret | grep admin-user | awk '{print \$1}')

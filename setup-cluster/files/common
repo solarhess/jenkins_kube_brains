@@ -5,6 +5,8 @@ set -eio pipefail
 # The common script file contains information on where
 # to store 
 #
+SSH_OPTS=""
+
 MASTER_NODE_HOSTNAME=stout-1.internal.sap.corp
 MASTER_NODE_IP=$(dig +short ${MASTER_NODE_HOSTNAME})
 WORKER_NODES_HOSTNAMES=( \
@@ -48,6 +50,6 @@ function localKubeconfig {
 # Copy all the script files to the target machine
 #
 function uploadFiles() {
-    ssh "admin@$1" mkdir -p files
-    (cd files ; rsync -avz * "admin@$1:files/")
+    ssh $SSH_OPTS "admin@$1" mkdir -p files
+    (cd files ; rsync -e "ssh $SSH_OPTS" -avz * "admin@$1:files/")
 }

@@ -15,5 +15,5 @@ source ./files/common
 localKubeconfig
 uploadFiles $MASTER_NODE_HOSTNAME
 
-ssh admin@$MASTER_NODE_HOSTNAME bash files/rook/rook-install.sh
+ssh $SSH_OPTS  admin@$MASTER_NODE_HOSTNAME bash files/rook/rook-install.sh
 

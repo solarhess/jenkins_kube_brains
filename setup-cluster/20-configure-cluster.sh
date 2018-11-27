@@ -15,4 +15,4 @@ source ./files/common
 
 uploadFiles $MASTER_NODE_HOSTNAME
 
-ssh admin@$MASTER_NODE_HOSTNAME bash -x files/configure-cluster.sh
+ssh $SSH_OPTS admin@$MASTER_NODE_HOSTNAME bash -x files/configure-cluster.sh

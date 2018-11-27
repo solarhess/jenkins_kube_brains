@@ -16,7 +16,7 @@ source ./files/common
 function prepareNode() {
     local node_hostname=$1
     uploadFiles ${node_hostname}
-    ssh "admin@${node_hostname}" sudo bash -x <<EOF
+    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash -x <<EOF
 systemctl disable ferm.service
 systemctl stop ferm.service
 reboot

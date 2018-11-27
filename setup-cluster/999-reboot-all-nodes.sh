@@ -17,7 +17,7 @@ function prepareNode() {
     local node_hostname=$1
 
     uploadFiles ${node_hostname}
-    ssh "admin@${node_hostname}" sudo bash -x <<EOF
+    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash -x <<EOF
 
 unlink /etc/resolv.conf
 cat > /etc/resolv.conf <<EOM

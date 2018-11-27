@@ -24,7 +24,7 @@ uploadFiles $MASTER_NODE_HOSTNAME
 # also know as 10.27.165.228/24
 # or stout-2.prod.datahub.ecp.ydev.hybris.com
 
-ssh admin@$MASTER_NODE_HOSTNAME bash <<EOF
+ssh $SSH_OPTS  admin@$MASTER_NODE_HOSTNAME bash <<EOF
     if helm status nginx-ingress ; then 
         helm delete --purge nginx-ingress
     fi

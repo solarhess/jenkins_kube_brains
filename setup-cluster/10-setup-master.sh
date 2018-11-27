@@ -21,12 +21,12 @@ uploadFiles $MASTER_NODE_HOSTNAME
 #   Configure the join token to never expire
 #   Configure the kube pod network subnet and service subnet to be exclusive of the
 #     corporate network subnet.
-#   Save the output into kubeadm-init.log so we later can reference the 
+#   Save the output into kubeadm-init.log so we later can reference the join token.
 #   Edit kubelet configuration to have a compatible kube dns service IP address,
 #     (This is probably a bug in kubeadm)
 #   Set up the admin user with the kubeconfig in the right places
 #  
-ssh admin@$MASTER_NODE_HOSTNAME bash -x <<EOF 
+ssh $SSH_OPTS admin@$MASTER_NODE_HOSTNAME bash -x <<EOF 
 rm -rf kubeadm-init.log
 sudo kubeadm init \
     --ignore-preflight-errors cri \

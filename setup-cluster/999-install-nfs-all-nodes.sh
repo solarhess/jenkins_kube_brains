@@ -17,7 +17,7 @@ function prepareNode() {
     local node_hostname=$1
 
     uploadFiles ${node_hostname}
-    ssh "admin@${node_hostname}" sudo bash -x <<EOF
+    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash -x <<EOF
 nohup apt-get install -y nfs-common & 
 EOF
 

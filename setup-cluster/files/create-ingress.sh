@@ -14,6 +14,8 @@ function die() {
 
 #
 # Install the secret for ${SERVICE_NAME}
+# Note, this is the wrong way to generate certificates. There are beter alternatives now.
+# If you are on the public internet with a real DNS name, use letsencrypt instead
 # 
 if ! kubectl -n $KUBE_NAMESPACE get secrets ${SERVICE_NAME}-ingress-secret ; then 
     openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /tmp/tls.key -out /tmp/tls.crt -subj "/CN=${INGRESS_HOSTNAME}.maurice.ecp.ydev.hybris.com" || die "couldn't create key"
@@ -21,6 +23,9 @@ if ! kubectl -n $KUBE_NAMESPACE get secrets ${SERVICE_NAME}-ingress-secret ; the
 fi
 rm /tmp/tls.key /tmp/tls.crt
 
+#
+# 
+#
 if ! kubectl -n $KUBE_NAMESPACE get ingress ${SERVICE_NAME}-ingress ; then 
 cat > /tmp/${SERVICE_NAME}-ingress.yaml <<EOF
 apiVersion: extensions/v1beta1

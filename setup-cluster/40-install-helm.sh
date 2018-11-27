@@ -14,7 +14,7 @@ cd $DIR
 source ./files/common
 localKubeconfig
 
-ssh admin@$MASTER_NODE_HOSTNAME bash <<EOF
+ssh $SSH_OPTS  admin@$MASTER_NODE_HOSTNAME bash <<EOF
     curl -O https://storage.googleapis.com/kubernetes-helm/helm-v2.7.2-linux-amd64.tar.gz
     tar -zxf helm-v2.7.2-linux-amd64.tar.gz
     sudo cp linux-amd64/helm /usr/local/bin

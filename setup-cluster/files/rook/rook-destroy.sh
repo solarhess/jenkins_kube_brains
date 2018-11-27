@@ -31,7 +31,7 @@ kubectl get crd && kubectl get ns
 
 
 for nodeHostname in $(kubectl get nodes --output=jsonpath="{..name}") ; do
-    ssh admin@${nodeHostname}.yrdci.rot.hybris.com sudo rm -rf /var-alt/lib/rook /var/lib/rook /rook/storage-dir
+    ssh $SSH_OPTS  admin@${nodeHostname}.yrdci.rot.hybris.com sudo rm -rf /var-alt/lib/rook /var/lib/rook /rook/storage-dir
 done
 
 
