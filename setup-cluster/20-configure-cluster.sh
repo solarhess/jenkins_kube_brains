@@ -12,6 +12,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 cd $DIR
 
 source ./files/common
+source $DIR/out/common # Use the AWS testbed, override cluster spec in files/common with out/common 
 
 uploadFiles $MASTER_NODE_HOSTNAME
 

@@ -1,5 +1,4 @@
 #!/bin/bash
-set -eio pipefail
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
@@ -12,18 +11,26 @@ cd $DIR
 
 
 source ./files/common
+source ./out/common
 
 function prepareNode() {
     local node_hostname=$1
-
+    set +e
+    
     ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash -x <<EOF
-kubeadm reset
+kubeadm reset -f
 rm -rf /var-alt/lib/rook
-unlink /var-alt/lib/kubelet/kubelet
 rm -rf /var/lib/kubelet
+rm -rf /var-alt/lib/kubelet
+rm -rf /var/lib/etcd
+rm -rf /etc/kubernetes
 
-reboot
+mkdir -p /var-alt/lib/kubelet
+ln -s /var-alt/lib/kubelet /var/lib/kubelet
+
+shutdown -r now
 EOF
+
 
 }
 

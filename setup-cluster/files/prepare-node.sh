@@ -16,60 +16,21 @@ cd $DIR
 # kubernetes to run
 #
 
-KUBERNETES_VERSION=1.9.0-00
+KUBERNETES_VERSION=1.12.0-00
 
 # 
-# Remove hybris apt repository as it is broken
+# Prepare apt
 #
-
-
-# broken repo list: 
-# http://depot.fra.hybris.com/hybris
-# http://depot.fra.hybris.com/hybris
-# https://repository.hybris.com/docker-engine
-
-cp /etc/apt/sources.list.d/jessie.list /etc/apt/sources.list.d/stretch.list
-sed -i 's/jessie/stretch/g' /etc/apt/sources.list.d/stretch.list
-
-rm -rf /etc/apt/sources.list.d/hybris.list \
-    /etc/apt/sources.list.d/docker.list \
-    /etc/apt/sources.list.d/wheezy.list \
-    /etc/apt/sources.list.d/jessie.list
-
 apt-get update
 sudo apt-get install -y software-properties-common
 
 #
-# Disable Swap 
+# Disable Swap, 
+# (not necessary on aws debian images)
 #
 swapoff -a
 perl -pi -e 's/^LABEL=swap/#LABEL=swap/g'  /etc/fstab
 
-#
-# disable systemd-resolved and resolvconf
-# it plays havoc with kubedns
-#
-systemctl stop systemd-resolved
-systemctl disable systemd-resolved
-systemctl stop resolvconf.service
-systemctl disable resolvconf.service
-
-unlink /etc/resolv.conf || echo "ok"
-
-#
-# Put known-good internal nameservers into resolv.conf
-#
-cat > /etc/resolv.conf <<EOF
-nameserver 10.27.224.242
-nameserver 10.27.224.243
-search prod.datahub.ecp.ydev.hybris.com yrdci.rot.hybris.com
-EOF
-
-#
-# Disable ferm firewall since it interferes with kube networking
-#
-systemctl stop ferm.service
-systemctl disable ferm.service
 
 #
 # Install a kubernetes-compatible version of docker
@@ -89,11 +50,27 @@ add-apt-repository \
    "deb https://download.docker.com/linux/$(. /etc/os-release; echo "$ID") \
    $(lsb_release -cs) \
    stable"
-apt-get update && apt-get install -y docker-ce=$(apt-cache madison docker-ce | grep 17.03 | head -1 | awk '{print $3}')
+apt-get update && apt-get install -y docker-ce=$(apt-cache madison docker-ce | grep 18.06 | head -1 | awk '{print $3}')
 apt-get install -y nfs-common
 
 # 
-# /var is on its own tiny partition
+# /var is on its own tiny root partition, there is a big EBS volume
+# attached at xvdb
+# Mount the EBS volume xvdb to /var-alt to hold the big stuff
+# see https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ebs-using-volumes.html
+#
+mounted_varalt=$(lsblk | grep '/var-alt' )
+if [[ ! -z "${$mounted_varalt}" ]] ; then 
+
+  file -s /dev/xvdb
+  mkfs -t ext4 /dev/xvdb
+  mkdir /var-alt
+  mount /dev/xvdb /var-alt
+  device_uuid=$(file -s /dev/xvdb | perl -n -e '/UUID=((\w|-)+)/ && print $1;')
+  echo "UUID=$device_uuid   /var-alt   ext4   rw,discard,errors=remount-ro    0    1" >> /etc/fstab
+fi
+
+#
 # set up a home for /var/lib/docker and /var/lib/kubelet on the root partition
 # so that we have more room to move.
 #
@@ -145,6 +122,11 @@ EOF
 apt-get update
 apt-get remove --purge -y kubelet kubeadm kubectl
 apt-get install -y --allow-downgrades kubelet=$KUBERNETES_VERSION kubeadm=$KUBERNETES_VERSION kubectl=$KUBERNETES_VERSION
+
+#
+# Load the kernel modules for modprobe
+#
+modprobe -- ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh
 
 systemctl daemon-reload
 systemctl restart docker

@@ -12,21 +12,18 @@ cd $DIR
 
 
 source ./files/common
+source ./out/common
 
 function prepareNode() {
     local node_hostname=$1
 
-    uploadFiles ${node_hostname}
-    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash -x <<EOF
+    ssh $SSH_OPTS  "admin@${node_hostname}" sudo bash <<EOF
+#
+# Run this on every node
+#
 
-unlink /etc/resolv.conf
-cat > /etc/resolv.conf <<EOM
-nameserver 10.27.224.242
-nameserver 10.27.224.243
-search prod.datahub.ecp.ydev.hybris.com yrdci.rot.hybris.com
-EOM
-
-reboot
+echo "Running on \$(hostname) OK"
+sudo modprobe -- ip_vs ip_vs_rr ip_vs_wrr ip_vs_sh
 EOF
 
 }

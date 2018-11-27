@@ -1,0 +1,14 @@
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: kube-system
+spec:
+  acme:
+    email: example@example.com
+    # Note, you may want to use letsencrypt-prod for real workloads so you actually
+    # get valid certificates
+    server: https://acme-staging-v02.api.letsencrypt.org/directory 
+    privateKeySecretRef:
+      name: example-issuer-account-key
+    http01: {}

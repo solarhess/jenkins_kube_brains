@@ -10,7 +10,8 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 cd $DIR
 
-source ./files/common
+source $DIR/files/common
+source $DIR/out/common # Use the AWS testbed, override cluster spec in files/common with out/common 
 
 uploadFiles $MASTER_NODE_HOSTNAME
 
@@ -32,11 +33,9 @@ sudo kubeadm init \
     --ignore-preflight-errors cri \
     --token-ttl 0 \
     --pod-network-cidr=${POD_NETWORK_CIDR} \
+    --apiserver-cert-extra-sans=${MASTER_NODE_HOSTNAME} \
     --service-cidr=${SERVICE_NETWORK_CIDR} | tee kubeadm-init.log
 
-sudo perl -pi -e 's/10.96.0.10/${KUBE_DNS_SERVICE_IP}/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-sudo systemctl daemon-reload
-sudo systemctl restart kubelet docker
 
 sudo cp /etc/kubernetes/admin.conf \$HOME
 sudo chown admin \$HOME/admin.conf
@@ -44,3 +43,4 @@ mkdir -p \$HOME/.kube
 cp \$HOME/admin.conf \$HOME/.kube/config
 EOF
 
+localKubeconfig

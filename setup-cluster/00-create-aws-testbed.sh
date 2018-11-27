@@ -13,7 +13,7 @@ echo "You need AWS command line tools installed and authenticated for this to wo
 echo "You need JQ to parse json outputs"
 mkdir -p out
 
-export AWS_CLI_OPTIONS="--output json --profile yaas_stout_prod"
+export AWS_CLI_OPTIONS="--output json"
 
 set -x 
 
@@ -109,20 +109,23 @@ if [[ ! -f out/authorize-sg.json ]] ; then
         aws $AWS_CLI_OPTIONS ec2 authorize-security-group-ingress \
             --group-id $GROUP_ID \
             --ip-permissions \
-                "IpProtocol=tcp,FromPort=22,ToPort=22,Ipv6Ranges=[{CidrIpv6="$MY_IP_ADDRESS/128"}]" \
-                "IpProtocol=tcp,FromPort=80,ToPort=80,Ipv6Ranges=[{CidrIpv6="$MY_IP_ADDRESS/128"}]" \
-                "IpProtocol=tcp,FromPort=443,ToPort=443,Ipv6Ranges=[{CidrIpv6="$MY_IP_ADDRESS/128"}]" \
-                "IpProtocol=tcp,FromPort=6443,ToPort=6443,Ipv6Ranges=[{CidrIpv6="$MY_IP_ADDRESS/128"}]" > out/authorize-sg.json
+                "IpProtocol=tcp,FromPort=22,ToPort=22,Ipv6Ranges=[{CidrIpv6=$MY_IP_ADDRESS/128}]" \
+                "IpProtocol=tcp,FromPort=6443,ToPort=6443,Ipv6Ranges=[{CidrIpv6=$MY_IP_ADDRESS/128}]" \
+                "IpProtocol=tcp,FromPort=80,ToPort=80,Ipv6Ranges=[{CidrIpv6=::/0}]" \
+                "IpProtocol=tcp,FromPort=443,ToPort=443,Ipv6Ranges=[{CidrIpv6=::/0}]" \
+                "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]" \
+                "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0}]" > out/authorize-sg.json
     else
         echo "IPv4 address '$MY_IP_ADDRESS' "
         aws $AWS_CLI_OPTIONS ec2 authorize-security-group-ingress \
             --group-id $GROUP_ID \
             --ip-permissions \
                 "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=$MY_IP_ADDRESS/32}]" \
-                "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=$MY_IP_ADDRESS/32}]" \
-                "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=$MY_IP_ADDRESS/32}]" \
-                "IpProtocol=tcp,FromPort=6443,ToPort=6443,IpRanges=[{CidrIp=$MY_IP_ADDRESS/32}]" > out/authorize-sg.json
-    
+                "IpProtocol=tcp,FromPort=6443,ToPort=6443,IpRanges=[{CidrIp=$MY_IP_ADDRESS/32}]" \
+                "IpProtocol=tcp,FromPort=80,ToPort=80,Ipv6Ranges=[{CidrIpv6=::/0}]" \
+                "IpProtocol=tcp,FromPort=443,ToPort=443,Ipv6Ranges=[{CidrIpv6=::/0}]" \
+                "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]" \
+                "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0}]" > out/authorize-sg.json
     fi
 fi
 
@@ -140,6 +143,7 @@ if [[ ! -f out/instances.json ]] ; then
         --key-name $SSH_KEY_NAME \
         --instance-type $INSTANCE_TYPE \
         --subnet-id $SUBNET_ID \
+        --block-device-mappings "DeviceName=xvdb,VirtualName=xvdb,Ebs={DeleteOnTermination=true,VolumeSize=50,VolumeType=gp2,Encrypted=false}" \
         --network-interfaces DeviceIndex=0,AssociatePublicIpAddress=true,DeleteOnTermination=true \
         --count $CLUSTER_SIZE_COUNT > out/instances.json
     if [[ $? != 0 ]] ; then 
@@ -162,11 +166,24 @@ fi
 #
 # Write common file to override cluster
 #
+
+master=( `jq -r '.Reservations[].Instances[0] | .NetworkInterfaces[].Association.PublicIp + "\t" +  .PrivateIpAddress +"\t"+.PrivateDnsName' < out/instances_running.json` )
+ingress=( `jq -r '.Reservations[].Instances[1] | .NetworkInterfaces[].Association.PublicIp + "\t" +  .PrivateIpAddress +"\t"+.PrivateDnsName' < out/instances_running.json` )
+
+
+
 node_hosts=( $(cat out/public_ips.txt) )
-master_ip=${node_hosts[0]}
+master_ip=${master[0]}
+ingress_ip=${ingress[0]}
+ingress_internal_ip=${ingress[1]}
+ingress_host=$(sed s/.ec2.internal//g <<< "${ingress[2]}")
+
 cat >out/common <<EOF
 MASTER_NODE_HOSTNAME=${master_ip}
 MASTER_NODE_IP=${master_ip}
+INGRESS_EXTERNAL_IP=$ingress_ip
+INGRESS_INTERNAL_IP=$ingress_internal_ip
+INGRESS_NODE_NAME=$ingress_host
 WORKER_NODES_HOSTNAMES=( \
 
 EOF
