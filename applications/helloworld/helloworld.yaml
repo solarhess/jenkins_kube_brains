@@ -21,7 +21,24 @@ spec:
   - hosts:
     - helloworld.kubecon2018.jonathanhess.com
     secretName: helloworld-cert # < cert-manager will store the created certificate in this secret.
-
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-webroot
+  namespace: default
+data:
+  index.html: |
+    <html>
+      <head>
+        <title>Hello World Jenkins Brains</title>
+      </head>
+      <body>
+        <h1>Hello World Jenkins Brains</h1>
+        <p>This makes sure that your jenkins brains cluster actually works</p>
+      </body>
+    </html>,
+  
 ---
 # Inspiration from Kelsey Hightower hello world
 # See https://github.com/kelseyhightower/kubernetes-initializer-tutorial/blob/master/deployments/helloworld.yaml
@@ -42,6 +59,13 @@ spec:
       containers:
         - name: helloworld
           image: nginx
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: nginx-webroot
+      volumes:
+        - name: nginx-webroot
+          configMap: 
+            name: nginx-webroot
 
 ---
 kind: Service

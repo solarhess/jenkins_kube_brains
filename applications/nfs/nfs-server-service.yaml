@@ -1,0 +1,16 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: nfs-server
+spec:
+  # Declare a static IP since nfs volumes can't use hostname.
+  clusterIP: 192.168.129.1 
+  ports:
+    - name: nfs
+      port: 2049
+    - name: mountd
+      port: 20048
+    - name: rpcbind
+      port: 111
+  selector:
+    role: nfs-server

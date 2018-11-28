@@ -1,0 +1,29 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: jenkins-shared-volume
+  labels:
+    type: local
+spec:
+  storageClassName: jenkins-shared-volume
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    server: 192.168.129.1 # 
+    path: "/exports/jenkins-shared"
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jenkins-shared-pvc
+spec:
+  storageClassName: jenkins-shared-volume
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
