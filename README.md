@@ -149,7 +149,9 @@ volumes yourself.
 
 Edit `applications/jenkins-volumes/nfs-jenkins*-pv.yaml` and put in the IP address from [applications/nfs/nfs-server-service.yaml](applications/nfs/nfs-server-service.yaml). 
 
-Run `kubectl apply -f applications/jenkins-volumes` to get the volumes created.
+Run `applications/jenkins-volumes/install.sh` to get the volumes created.
+This will create the persistent volumes and also mount the NFS server to create
+the directories to hold the data for those volumes.
 
 Run `kubectl get pv` to confirm that the volumes get created and end up in state 'Bound'
 
@@ -161,9 +163,25 @@ helm chart:
 
 ### Launch the Jenkins helm chart
 
+Go to applications/jenkins
+Edit jenkins-values.yaml
+* change 'jenkins.kubecon2018.jonathanhess.com' to your hostname in 2 places
+
+Run jenkinsctl.sh install to install everything
+
+Update your git repos... put the application/jenkins/out/id_rsa.pub as an access key
+
+
+### Smoke test to make sure it is working
+
+Make sure Jenkins is talking to K8s... go to "Manage Jenkins/Configuration" Scroll down the section called "Cloud/Kubernetes" click the "Test Connection" button. It should work
+
+Create a "freestyle job" with a single "execute shell script" in it. Run the build to make sure that it runs. 
+
+Yay! You did it!
+
 
 ### Customize your Jenkins master docker image
-
 
 ### Customize your Jenkins worker docker image
 
