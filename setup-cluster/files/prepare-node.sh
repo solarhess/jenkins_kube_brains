@@ -71,8 +71,8 @@ if [[ ! -z "${$mounted_varalt}" ]] ; then
 fi
 
 #
-# set up a home for /var/lib/docker and /var/lib/kubelet on the root partition
-# so that we have more room to move.
+# Replace for /var/lib/docker and /var/lib/kubelet on the root partition
+# with symlinks to a bigger, faster partition so that we have more room to move.
 #
 mkdir -p /var-alt/lib/docker
 cat << EOF > /etc/docker/daemon.json
@@ -81,13 +81,6 @@ cat << EOF > /etc/docker/daemon.json
   "graph": "/var-alt/lib/docker"
 }
 EOF
-
-# 
-# Install docker cleanup hourly cron job to remove unused images and volumes
-# Note... the files in /etc/cron.daily must not contain the '.' character. 
-#
-cp docker-cleanup2 /etc/cron.hourly/docker-cleanup2
-chmod a+x /etc/cron.daily/docker-cleanup2
 
 #
 # prepare systemd setup files for /var-alt/lib/kubelet
@@ -100,14 +93,12 @@ mkdir -p /var-alt/lib/kubelet
 ln -s /var-alt/lib/kubelet /var/lib/kubelet
 mkdir -p /etc/systemd/system/kubelet.service.d/
 
+# 
+# Install docker cleanup hourly cron job to remove unused images and volumes
+# Note... the files in /etc/cron.daily must not contain the '.' character. 
 #
-# This didn't work
-#
-
-# cat <<EOM > /etc/systemd/system/kubelet.service.d/20-kube_home.conf
-# [Service]
-# Environment="KUBELET_EXTRA_ARGS=--root-dir /var-alt/lib/kubelet"
-# EOM
+cp docker-cleanup2 /etc/cron.hourly/docker-cleanup2
+chmod a+x /etc/cron.daily/docker-cleanup2
 
 # 
 # Install kubeadm and kubelet dependencies. 

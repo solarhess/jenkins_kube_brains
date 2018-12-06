@@ -37,16 +37,6 @@ SERVICE_NETWORK_CIDR=192.168.128.0/17
 ########## END EDIT HERE #######
 
 # 
-# This corrects a bug in kubeadm which doesn't adjust the service IP address of 
-# kubedns when you use a non-default ip subnet for the services and pods. 
-# 
-function reconfigureKubeDnsAddress() {
-    sudo perl -pi -e 's/10.96.0.10/192.168.128.10/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-    sudo systemctl daemon-reload
-    sudo systemctl restart kubelet docker
-}
-
-# 
 # A handy shell script function to print an error message and exit
 # 
 function die() {

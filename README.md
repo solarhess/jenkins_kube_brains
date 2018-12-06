@@ -171,6 +171,10 @@ Run jenkinsctl.sh install to install everything
 
 Update your git repos... put the application/jenkins/out/id_rsa.pub as an access key
 
+### Add GIT SSH key credentials
+
+
+
 
 ### Smoke test to make sure it is working
 
@@ -179,6 +183,10 @@ Make sure Jenkins is talking to K8s... go to "Manage Jenkins/Configuration" Scro
 Create a "freestyle job" with a single "execute shell script" in it. Run the build to make sure that it runs. 
 
 Yay! You did it!
+
+### Backup and Restore Jenkins Home
+
+The jenkins configuration comes with 2 default jobs, backup-jenkins-config and restore-jenkins config. These jobs allow you to take a Tar snapshot of Jenkins home, and laod it back into this for later. 
 
 
 ### Customize your Jenkins master docker image

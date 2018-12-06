@@ -31,5 +31,4 @@ spec:
       volumes:
       - name: nfs-export-fast
         hostPath:
-          path: /var-alt/lib/jenkins-nfs
-            
+          path: /var-alt/lib/jenkins-nfs            

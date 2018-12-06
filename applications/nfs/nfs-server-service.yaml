@@ -3,7 +3,8 @@ apiVersion: v1
 metadata:
   name: nfs-server
 spec:
-  # Declare a static IP since nfs volumes can't use hostname.
+  # Declare a static IP since nfs 
+  # volumes can't use hostname.
   clusterIP: 192.168.129.1 
   ports:
     - name: nfs

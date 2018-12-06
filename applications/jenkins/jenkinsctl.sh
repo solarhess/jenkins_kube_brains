@@ -37,6 +37,37 @@ EOF
     helm install --name jenkins -f jenkins-values.yaml stable/jenkins --namespace $KUBE_NAMESPACE || die "Did not deploy"
 }
 
+function help() {
+    set +x
+    cat <<EOF
+
+jenkinsctl.sh <command>
+
+This script gets Jenkins running in your cluster
+Here are some helpful commands to keep running:
+
+    ./jenkinsctl.sh install        # Run the helm chart to install Jenkins
+    ./jenkinsctl.sh status         # Show the helm status of your jenkins cluster 
+    ./jenkinsctl.sh printPassword  # Prints out the password to log into jenkins
+    ./jenkinsctl.sh upgrade        # Helm upgradeds your jenkins
+    ./jenkinsctl.sh deleteWorkers  # Delete all the jenkins worker pods
+    ./jenkinsctl.sh destroy        # Delete Jenkins from your cluster
+
+Jenkins now has its own SSH key to access your git repos. 
+You can find this key in $PWD/out/id_rsa.pub
+Or copy from here: 
+
+EOF
+cat $PWD/out/id_rsa.pub
+cat <<EOF
+
+Copy this as an access key into your cluster.
+Happy Building!
+
+EOF
+
+}
+
 function upgrade() {
     helm upgrade jenkins -f jenkins-values.yaml stable/jenkins --namespace $KUBE_NAMESPACE
 }
@@ -44,7 +75,6 @@ function upgrade() {
 function destroy() {
     if helm status jenkins ; then
         helm delete --purge jenkins
-        #kubectl -n buildops delete pvc jkdatahub-jenkins
         sleep 120
     fi
     deleteWorkers
@@ -73,5 +103,9 @@ function deleteWorkers() {
     #kubectl -n buildops delete pod $(kubectl -n buildops  get pods -a -l 'jenkins=slave' -o "jsonpath={..metadata.name}")
     kubectl -n $KUBE_NAMESPACE -l jenkins=slave delete pods
 }
+
+if [[ -z ${1:-} ]] ; then 
+    help
+fi
 
 $@

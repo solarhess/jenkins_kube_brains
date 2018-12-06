@@ -11,8 +11,9 @@ spec:
   accessModes:
     - ReadWriteMany
   nfs:
-    server: 192.168.129.1 # Use the IP address, hostname doesn't work
-    path: "/exports/jenkins-home" # /exports/* will land on /var-alt/lib/jenkins-nfs 
+    # Use the IP address, hostname doesn't work
+    server: 192.168.129.1 
+    path: "/exports/jenkins-home" 
 
 ---
 
