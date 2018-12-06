@@ -104,6 +104,7 @@ Master:
     - workflow-aggregator:2.5
     - credentials-binding:1.16
     - git:3.9.1
+    - groovy:2.0 # added to suppor the backup and restore jobs
   # Used to approve a list of groovy functions in pipelines used the script-security plugin. Can be viewed under /scriptApproval
   # ScriptApproval:
   #   - "method groovy.json.JsonSlurperClassic parseText java.lang.String"
@@ -119,9 +120,165 @@ Master:
   # master.key and hudson.util.Secret)
   # SecretsFilesSecret: jenkins-secrets
   # Jenkins XML job configs to provision
-  # Jobs: |-
-  #   test: |-
-  #     <<xml here>>
+  Jobs: >-
+    restore-jenkins-config: |-
+      <?xml version='1.1' encoding='UTF-8'?>
+      <project>
+        <actions/>
+        <description></description>
+        <keepDependencies>false</keepDependencies>
+        <properties>
+          <hudson.model.ParametersDefinitionProperty>
+            <parameterDefinitions>
+              <hudson.model.FileParameterDefinition>
+                <name>jenkins-home.tar.gz</name>
+                <description>Upload the jenkins home file from the backup job.</description>
+              </hudson.model.FileParameterDefinition>
+            </parameterDefinitions>
+          </hudson.model.ParametersDefinitionProperty>
+        </properties>
+        <scm class="hudson.scm.NullSCM"/>
+        <assignedNode>master</assignedNode>
+        <canRoam>false</canRoam>
+        <disabled>false</disabled>
+        <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+        <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+        <triggers/>
+        <concurrentBuild>false</concurrentBuild>
+        <builders>
+          <hudson.tasks.Shell>
+            <command>set -x
+
+      ls -al
+
+      mkdir -p jenkins-home
+
+      (
+      echo
+          echo
+          echo &quot;**** Contents of Jenkins Home Before&quot;
+        ls -al $JENKINS_HOME/
+          ls -al $JENKINS_HOME/jobs/
+
+        cd $JENKINS_HOME
+        tar -vzxf $WORKSPACE/jenkins-home.tar.gz 
+
+        echo
+          echo
+        echo &quot;**** Contents of Jenkins Home After&quot;
+
+
+          ls -al $JENKINS_HOME/
+          ls -al $JENKINS_HOME/jobs/
+
+      )
+      /usr/local/bin/install-plugins.sh
+
+      </command>
+          </hudson.tasks.Shell>
+          <hudson.plugins.groovy.SystemGroovy plugin="groovy@2.0">
+            <source class="hudson.plugins.groovy.StringSystemScriptSource">
+              <script plugin="script-security@1.48">
+                <script>import hudson.model.*
+      println &quot;Starting hudson reload...&quot;
+      Hudson.instance.doReload()
+      println &quot;Finished hudson reload.&quot;
+      </script>
+                <sandbox>false</sandbox>
+              </script>
+            </source>
+          </hudson.plugins.groovy.SystemGroovy>
+        </builders>
+        <publishers/>
+        <buildWrappers/>
+      </project>
+    backup-jenkins-config: |-
+      <?xml version='1.1' encoding='UTF-8'?>
+      <project>
+        <actions/>
+        <description></description>
+        <keepDependencies>false</keepDependencies>
+        <properties/>
+        <scm class="hudson.scm.NullSCM"/>
+        <assignedNode>master</assignedNode>
+        <canRoam>false</canRoam>
+        <disabled>false</disabled>
+        <blockBuildWhenDownstreamBuilding>false</blockBuildWhenDownstreamBuilding>
+        <blockBuildWhenUpstreamBuilding>false</blockBuildWhenUpstreamBuilding>
+        <triggers/>
+        <concurrentBuild>false</concurrentBuild>
+        <builders>
+          <hudson.tasks.Shell>
+            <command>set -x
+
+      echo &quot;Backing Up!&quot;
+      #ls -al $JENKINS_HOME/
+      #ls -al $JENKINS_HOME/plugins
+      #find $JENKINS_HOME/plugins/artifactory -ls
+
+      rm -f jenkins-home.tar || echo &quot;don&apos;t care&quot;
+
+      # From within the jenkins home directory
+
+      ( # subshell, cd to Jenkins Home
+      cd $JENKINS_HOME
+
+      # Get all the configuration stuff from jenkins_home
+      # excluding transient state like caches and logs
+      # excluding non-configuration state like job results and workspaces
+      tar -cvf $WORKSPACE/jenkins-home.tar \
+        --exclude=caches \
+        --exclude=config-history \
+        --exclude=logs \
+        --exclude=jobs \
+        --exclude=config-history \
+        --exclude=fingerprints \
+        --exclude=plugins \
+        --exclude=war \
+        --exclude=workspace \
+        *
+
+      # Grab job config.xml and build numbers
+      tar --append -vf $WORKSPACE/jenkins-home.tar \
+        --exclude &quot;jobs/backup-jenkins-config/builds&quot; \
+        --exclude &quot;jobs/*/builds/*/archive&quot; \
+        --exclude &quot;jobs/*/fileParameters/*/archive&quot; \
+        jobs/*
+
+      )
+
+
+      ##
+      # Make a helm chart of all the right jenkins extension versions
+      #
+      echo &gt; jenkins-extensions.txt
+      for pluginManifest in $JENKINS_HOME/plugins/*/META-INF/MANIFEST.MF ; do
+          extensionName=$(perl -n -e &apos;if(/Extension-Name: (.*)$/) { $a = $1 ; chop($a) ; print $a}&apos; $pluginManifest )
+          extensionVersion=$(perl -n -e &apos;if(/Plugin-Version: (.*)$/) { $a = $1 ; chop($a) ; print $a}&apos; $pluginManifest )
+          printf &quot;%s:%s\n&quot; &quot;${extensionName}&quot; &quot;${extensionVersion}&quot; &gt;&gt; jenkins-extensions.txt
+      done
+
+      tar --append -vf $WORKSPACE/jenkins-home.tar \
+        jenkins-extensions.txt
+
+      rm jenkins-home.tar.gz || echo &quot;don&apos;t care&quot;
+      gzip jenkins-home.tar
+
+      echo &quot;DONE&quot;</command>
+          </hudson.tasks.Shell>
+        </builders>
+        <publishers>
+          <hudson.tasks.ArtifactArchiver>
+            <artifacts>jenkins-home.tar.gz</artifacts>
+            <allowEmptyArchive>false</allowEmptyArchive>
+            <onlyIfSuccessful>false</onlyIfSuccessful>
+            <fingerprint>false</fingerprint>
+            <defaultExcludes>true</defaultExcludes>
+            <caseSensitive>true</caseSensitive>
+          </hudson.tasks.ArtifactArchiver>
+        </publishers>
+        <buildWrappers/>
+      </project>
   CustomConfigMap: false
   # By default, the configMap is only used to set the initial config the first time
   # that the chart is installed.  Setting `OverwriteConfig` to `true` will overwrite
