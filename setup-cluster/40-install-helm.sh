@@ -12,11 +12,12 @@ cd $DIR
 
 
 source ./files/common
+source ./out/common
 localKubeconfig
 
-ssh admin@$MASTER_NODE_HOSTNAME bash <<EOF
-    curl -O https://storage.googleapis.com/kubernetes-helm/helm-v2.7.2-linux-amd64.tar.gz
-    tar -zxf helm-v2.7.2-linux-amd64.tar.gz
+ssh $SSH_OPTS  admin@$MASTER_NODE_HOSTNAME bash <<EOF
+    curl -o helm.tar.gz https://storage.googleapis.com/kubernetes-helm/helm-v2.11.0-linux-amd64.tar.gz
+    tar -zxf helm.tar.gz
     sudo cp linux-amd64/helm /usr/local/bin
     helm init --upgrade
 

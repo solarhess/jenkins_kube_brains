@@ -10,8 +10,9 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 cd $DIR
 
-
-source ./files/common
+source $DIR/files/common
+# Use the AWS testbed, override cluster spec in files/common with out/common 
+source $DIR/out/common
 
 function prepareNode() {
     local node_hostname=$1
@@ -20,8 +21,9 @@ function prepareNode() {
     echo "   ssh admin@${node_hostname}"
     echo '    echo "admin ALL=(ALL) NOPASSWD:ALL" | sudo tee /etc/sudoers.d/admin'
 
+    ssh $SSH_OPTS "admin@${node_hostname}" "sudo apt-get update && sudo apt-get install -y rsync"
     uploadFiles ${node_hostname}
-    ssh "admin@${node_hostname}" sudo bash -x /home/admin/files/prepare-node.sh || echo "Unable to connect to ${node_hostname}"
+    ssh $SSH_OPTS "admin@${node_hostname}" sudo bash -x /home/admin/files/prepare-node.sh || echo "Unable to connect to ${node_hostname}"
 }
 
 echo "Prepareing nodes with basic dependencies for the kubernetes cluster"

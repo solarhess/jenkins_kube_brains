@@ -1,0 +1,81 @@
+
+# See https://cert-manager.readthedocs.io/en/latest/reference/ingress-shim.html
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    # add an annotation indicating the issuer to use.
+    certmanager.k8s.io/cluster-issuer: letsencrypt-staging
+  name: helloworld
+  namespace: default
+spec:
+  rules:
+  - host: helloworld.kubecon2018.jonathanhess.com
+    http:
+      paths:
+      - backend:
+          serviceName: helloworldservice
+          servicePort: 80
+        path: /
+  tls: # < placing a host in the TLS config will indicate a cert should be created
+  - hosts:
+    - helloworld.kubecon2018.jonathanhess.com
+    secretName: helloworld-cert # < cert-manager will store the created certificate in this secret.
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-webroot
+  namespace: default
+data:
+  index.html: |
+    <html>
+      <head>
+        <title>Hello World Jenkins Brains</title>
+      </head>
+      <body>
+        <h1>Hello World Jenkins Brains</h1>
+        <p>This makes sure that your jenkins brains cluster actually works</p>
+      </body>
+    </html>,
+  
+---
+# Inspiration from Kelsey Hightower hello world
+# See https://github.com/kelseyhightower/kubernetes-initializer-tutorial/blob/master/deployments/helloworld.yaml
+apiVersion: apps/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: helloworld
+  name: helloworld
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: helloworld
+      name: helloworld
+    spec:
+      containers:
+        - name: helloworld
+          image: nginx
+          volumeMounts:
+            - mountPath: /usr/share/nginx/html
+              name: nginx-webroot
+      volumes:
+        - name: nginx-webroot
+          configMap: 
+            name: nginx-webroot
+
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: helloworldservice
+spec:
+  selector:
+    app: helloworld
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80

@@ -27,7 +27,7 @@ echo "*"
 echo "*"
 echo 
 for worker_hostname in ${WORKER_NODES_HOSTNAMES[*]} ; do 
-    ssh admin@${worker_hostname} hostname
+    ssh $SSH_OPTS  admin@${worker_hostname} hostname
 done
 
 echo 
@@ -46,7 +46,7 @@ for worker_hostname in ${WORKER_NODES_HOSTNAMES[*]} ; do
     echo "*"
     echo 
 
-    ssh admin@${worker_hostname} > worker-check.out <<EOF
+    ssh $SSH_OPTS  admin@${worker_hostname} > worker-check.out <<EOF
 echo HOSTNAME `hostname`
 sudo echo "NOPASSWD SUDOERS OK"
 dpkg -s kubelet && echo "KUBELET INSTALLED OK" || echo "NO KUBELET INSTALLED"

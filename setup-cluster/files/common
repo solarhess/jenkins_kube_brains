@@ -5,26 +5,36 @@ set -eio pipefail
 # The common script file contains information on where
 # to store 
 #
-MASTER_NODE_HOSTNAME=stout-1.internal.sap.corp
-MASTER_NODE_IP=$(dig +short ${MASTER_NODE_HOSTNAME})
+
+
+########## BEGIN EDIT HERE #######
+#
+# TODO: Edit these environment variables for your VMs
+# 
+#
+
+SSH_OPTS="" # Maybe you have a custom SSH key for these VMs? reference it here
+
+
+MASTER_NODE_HOSTNAME=stout-1.internal.sap.corp # The internal DNS name for your master node VM
+MASTER_NODE_IP=$(dig +short ${MASTER_NODE_HOSTNAME}) 
 WORKER_NODES_HOSTNAMES=( \
-    stout-31.internal.sap.corp \
+    stout-31.internal.sap.corp \ # The internal DNS names of your worker node VMs
     stout-32.internal.sap.corp \
     )
 
+INGRESS_EXTERNAL_IP=10.0.25.160 # The IP address of your ingress VM
+INGRESS_INTERNAL_IP=${INGRESS_EXTERNAL_IP}
+INGRESS_NODE_NAME=stout-2 # The short hostname address of your ingress VM
+
+#
+# TODO confirm your corporate network's subnet does not overlap
+# with these ranges. 
+#
 POD_NETWORK_CIDR=192.168.0.0/17
 SERVICE_NETWORK_CIDR=192.168.128.0/17
-KUBE_DNS_SERVICE_IP=192.168.128.10
 
-# 
-# This corrects a bug in kubeadm which doesn't adjust the service IP address of 
-# kubedns when you use a non-default ip subnet for the services and pods. 
-# 
-function reconfigureKubeDnsAddress() {
-    sudo perl -pi -e 's/10.96.0.10/192.168.128.10/g' /etc/systemd/system/kubelet.service.d/10-kubeadm.conf
-    sudo systemctl daemon-reload
-    sudo systemctl restart kubelet docker
-}
+########## END EDIT HERE #######
 
 # 
 # A handy shell script function to print an error message and exit
@@ -38,16 +48,26 @@ function die() {
 # Go get the config from the master node and set KUBECONFIG environment variables
 #
 function localKubeconfig {
-    if [ ! -f admin.conf ] ; then 
-        scp admin@$MASTER_NODE_HOSTNAME:admin.conf ./admin.conf
+    if [ ! -f $DIR/out/admin.conf ] ; then 
+        #
+        # Get the kubeconfig and replace aws internal ip with 
+        # the aws public ip
+        # 
+        scp $SSH_OPTS admin@54.210.171.89:admin.conf $DIR/out/admin.conf
+        perl -pi -e 's/https:\/\/10\.(\d|\.)+:6443/https:\/\/'$MASTER_NODE_HOSTNAME':6443/g' $DIR/out/admin.conf
+        export KUBECONFIG=$PWD/out/admin.conf
+        echo ""
+        echo "To enable your local kubectl to the cluster, run this command:"
+        echo "  export KUBECONFIG=$PWD/out/admin.conf"
+        echo ""
     fi
-    export KUBECONFIG=`pwd`/admin.conf
+    export KUBECONFIG=$DIR/out/admin.conf
 }
 
 #
 # Copy all the script files to the target machine
 #
 function uploadFiles() {
-    ssh "admin@$1" mkdir -p files
-    (cd files ; rsync -avz * "admin@$1:files/")
+    ssh $SSH_OPTS "admin@$1" mkdir -p files
+    (cd files ; rsync -e "ssh $SSH_OPTS" -avz * "admin@$1:files/")
 }

@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: prepare-volumes
+spec:
+  restartPolicy: Never
+  containers:
+    - name: preparevolume
+      image: busybox
+      volumeMounts:
+      - mountPath: /exports
+        name: exports
+      command:
+        - "/bin/sh"
+        - "-c"
+        - |-
+          set -x
+          mkdir -p /exports/jenkins-home 
+          chmod 777 /exports/jenkins-home
+          mkdir -p /exports/jenkins-shared
+          chmod 777 /exports/jenkins-shared
+          ls -al /exports
+  volumes:
+  - name: exports
+    nfs:
+      server: 192.168.129.1 # Use the IP address, hostname doesn't work
+      path: "/exports" 

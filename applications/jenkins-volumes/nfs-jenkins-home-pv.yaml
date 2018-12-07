@@ -1,0 +1,30 @@
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: jenkins-home-volume
+  labels:
+    type: local
+spec:
+  storageClassName: jenkins-home-volume
+  capacity:
+    storage: 30Gi
+  accessModes:
+    - ReadWriteMany
+  nfs:
+    # Use the IP address, hostname doesn't work
+    server: 192.168.129.1 
+    path: "/exports/jenkins-home" 
+
+---
+
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: jenkins-home-pvc
+spec:
+  storageClassName: jenkins-home-volume
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
