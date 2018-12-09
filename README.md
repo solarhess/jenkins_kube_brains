@@ -1,28 +1,7 @@
 # jenkins + kube = b-r-a-i-n-s
 Example scripts to run Kubernetes on your private VMs. This is to support of Loren and my KubeCon 2018 talk "Migrating Jenkins to Kubernetes broke our brains." https://sched.co/GrSh
 
-More details to follow
-
-## Planning
-
-TODO List for documentation
-
-* DONE Scrub private data
-* DONE document the shell scripts as-is
-* DONE Get it working on AWS VMs
-  * Spin up 4 Debian VMs
-  * Run scripts to set up system
-  * Set up with Azure or AWS DNS
-* Update to current practices
-  * Monitoring with helm + prometheus + grafana https://akomljen.com/get-kubernetes-cluster-metrics-with-prometheus-in-5-minutes/
-  * DONE kubecertmanager for certificates
-* Write documentation on kube setup into this repo
-  * Conditions of our environment that resulted in this approach
-  * External servcies setup
-  * Kubernetes setup
-* Demonstrate the NFS server & pinned node
-* Links to helpful Kube tools - kubespy, stern
-* Add Jenkins Stuff
+![Kubernetes + Jenkins broke our Brains](./doc/presentation/slides/Slide1.png)
 
 ## Cluster Setup
 
@@ -104,7 +83,7 @@ step of spinning up the cluster.
 Once that is done, simply run  `kubectl apply -f applications/helloworld/helloworld.yaml` to deploy your helloworld application.
 use `kubectl get pods` to ensure that your pod starts up.
 
-Then, point your browser at https://helloworld.[your domain here]/. You should
+Then, point your browser at https://helloworld.{your domain here}/. You should
 see a "untrusted certificate warning" and then eventually a page with the title "Hello World Jenkins Brains."
 
 To simplify helloworld, we put all the kubernetes definitions in the same
@@ -171,10 +150,6 @@ Run jenkinsctl.sh install to install everything
 
 Update your git repos... put the application/jenkins/out/id_rsa.pub as an access key
 
-### Add GIT SSH key credentials
-
-
-
 
 ### Smoke test to make sure it is working
 
@@ -188,12 +163,18 @@ Yay! You did it!
 
 The jenkins configuration comes with 2 default jobs, backup-jenkins-config and restore-jenkins config. These jobs allow you to take a Tar snapshot of Jenkins home, and laod it back into this for later. 
 
+### Passing files between build stages
 
-### Customize your Jenkins master docker image
+Suppose you need to pass files between build stages in Jenkins. The simplest way to do it is to use
+`stash` and `unstash` in your Jenkinsfile. [Example](https://jenkins.io/doc/pipeline/examples/#unstash-different-dir). However, if the total amount
+of data you are stashing gets to be over 50mb, this is going to be too slow.
 
-### Customize your Jenkins worker docker image
+For really big files, we recommend using a shared NFS folder. This configuration automatically mounts an NFS volume
+to `/mount/jenkins-shared` on every worker and the jenkins master. You can write your 
+build stages to use this like a shared drive to pass files between stages. 
 
-### Passing large files
+Our build needed to stash 1gb tar.gz files. Jenkinsfile stash took 8 minutes to stash. This NFS volume
+approach took 20 seconds to stash.
 
 ## Useful Tips and Tools 
 
@@ -205,6 +186,6 @@ Here are some tips that we have evolved:
 
 Here are some useful command line tools to help you with Kubernetes
 
-* stern - follows aggregates logs from pods of the same deployment
-* kubespy - command line to watch the status of deployments
+* [stern](https://github.com/wercker/stern) - follows aggregates logs. The `kube logs -f` you were looking for
+* [kubespy](https://github.com/pulumi/kubespy) - command line to watch the status of deployments.
 
