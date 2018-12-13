@@ -1,4 +1,4 @@
-# How migrating Jenknis to Kubernetes broke our brains
+# How migrating Jenkins to Kubernetes broke our brains
 Example scripts to run Kubernetes on your private VMs. This is to support of Loren and my KubeCon 2018 talk "Migrating Jenkins to Kubernetes broke our brains." https://sched.co/GrSh
 
 ![How migrating jenkins to kubernetes broke our Brains](./doc/presentation/slides/Slide1.png)
